@@ -1,0 +1,49 @@
+import time
+import turtle
+
+# Create screen object
+screen = turtle.Screen()
+screen.title("Turtle Timer")
+
+# Create turtle object for timer display
+timer_turtle = turtle.Turtle()
+timer_turtle.hideturtle()
+timer_turtle.penup()
+timer_turtle.goto(0, 100)
+
+# Set initial time
+start_time = time.time()
+elapsed_time = 0
+
+# Function to update timer display
+def update_timer():
+    global elapsed_time
+    elapsed_time = int(time.time() - start_time)
+    timer_turtle.clear()
+    timer_turtle.write(f"Time: {elapsed_time}", align="center", font=("Arial", 24, "normal"))
+    screen.ontimer(update_timer, 1000) # Update every 1 second
+
+
+def transport_turtle(x,y):
+    player_turtle.hideturtle()
+    player_turtle.penup()
+    player_turtle.speed(0)
+    player_turtle.setpos(x,y)
+    player_turtle.showturtle()
+
+# Start updating the timer
+update_timer()
+
+# Your other turtle code goes here
+# For example, create a turtle to move around
+player_turtle = turtle.Turtle()
+player_turtle.shape("turtle")
+player_turtle.penup()
+
+screen.onclick(transport_turtle)
+screen.listen()
+
+# Main loop
+while True:
+    player_turtle.forward(1)
+    screen.update()
