@@ -1,0 +1,180 @@
+from random import random
+import turtle
+import time
+# Screen setup
+screen = turtle.Screen()
+screen.title("Maze Game")
+screen.bgcolor("Black")
+screen.setup(width=900, height=900)
+# Create the maze drawer
+maze_drawer = turtle.Turtle()
+maze_drawer.speed(500)
+maze_drawer.penup()
+maze_drawer.hideturtle()
+# Setting up player
+player = turtle.Turtle()
+player.shape("triangle")
+player.color("red")
+player.penup()
+player.goto(-250, 250)
+# Finish marker
+finish = turtle.Turtle()
+finish.shape("square")
+finish.color("green")
+finish.penup()
+finish.goto(290, -290)
+# Text drawer
+text_drawer = turtle.Turtle()
+text_drawer.hideturtle()
+text_drawer.penup()
+# Follower turtles
+followers = []
+num_followers = 3  # Number of follower turtles
+for _ in range(num_followers):
+    follower = turtle.Turtle()
+    follower.shape("circle")
+    follower.color("blue")
+    follower.penup()
+    follower.goto(random() * 800 - 400, random() * 800 - 400)  # Random starting position
+    followers.append(follower)
+# Stopwatch setup
+elapsed_time = 0
+fastest_time = None
+# The Border limits
+BORDER_LIMIT = 400
+# The Maze design
+walls = []
+# Drawing functions
+def draw_border():
+    maze_drawer.color("White")
+    maze_drawer.width(5)
+    maze_drawer.penup()
+    maze_drawer.goto(-BORDER_LIMIT, BORDER_LIMIT)
+    maze_drawer.pendown()
+    for _ in range(4):
+        maze_drawer.forward(2 * BORDER_LIMIT)
+        maze_drawer.right(90)
+    maze_drawer.penup()
+def draw_maze(difficulty):
+    maze_drawer.color('white')
+    maze_drawer.width(5)
+    cell_size = 60 if difficulty == "easy" else 40 if difficulty == "medium" else 20
+    for x in range(-BORDER_LIMIT, BORDER_LIMIT, cell_size):
+        for y in range(-BORDER_LIMIT, BORDER_LIMIT, cell_size):
+            if random() > 0.5 and x + cell_size <= BORDER_LIMIT:
+                line(x, y, x + cell_size, y)
+            elif y - cell_size >= -BORDER_LIMIT:
+                line(x, y, x, y - cell_size)
+    clear_area(-350, 350, cell_size)
+    clear_area(290, -290, cell_size)
+def line(x1, y1, x2, y2):
+    maze_drawer.penup()
+    maze_drawer.goto(x1, y1)
+    maze_drawer.pendown()
+    maze_drawer.goto(x2, y2)
+    maze_drawer.penup()
+    walls.append((x1, y1, x2, y2))
+def clear_area(center_x, center_y, size):
+    global walls
+    cleared_area = (center_x - size, center_y - size, center_x + size, center_y + size)
+    walls = [
+        wall for wall in walls
+        if not (cleared_area[0] <= wall[0] <= cleared_area[2] and
+                cleared_area[1] <= wall[1] <= cleared_area[3])
+    ]
+# Movement and collision functions
+def is_collision(x, y):
+    for wall in walls:
+        x1, y1, x2, y2 = wall
+        if x1 == x2 and abs(x - x1) < 10 and min(y1, y2) <= y <= max(y1, y2):
+            return True
+        if y1 == y2 and abs(y - y1) < 10 and min(x1, x2) <= x <= max(x1, x2):
+            return True
+    return False
+def move_up():
+    x, y = player.position()
+    if not is_collision(x, y + 10) and y + 10 <= BORDER_LIMIT:
+        player.sety(y + 10)
+def move_down():
+    x, y = player.position()
+    if not is_collision(x, y - 10) and y - 10 >= -BORDER_LIMIT:
+        player.sety(y - 10)
+def move_left():
+    x, y = player.position()
+    if not is_collision(x - 10, y) and x - 10 >= -BORDER_LIMIT:
+        player.setx(x - 10)
+def move_right():
+    x, y = player.position()
+    if not is_collision(x + 10, y) and x + 10 <= BORDER_LIMIT:
+        player.setx(x + 10)
+
+# Pause functionality
+def toggle_pause():
+    global paused
+    paused = not paused
+    if paused:
+        print("Game Paused")
+    else:
+        print("Game Resumed")
+
+# Follower movement
+def move_followers():
+    for follower in followers:
+        follower.setheading(follower.towards(player))
+        follower.forward(3)  # Adjust speed as needed
+    screen.ontimer(move_followers, 50)
+# Check for win condition
+def check_finish():
+    if player.distance(finish) < 20:
+        elapsed_time = round(time.time() - start_time, 2)
+        display_message(f"You Win in {elapsed_time} seconds!")
+        global game_over
+        game_over = True
+# Display message function
+def display_message(message):
+    """Display a win/lose message."""
+    screen.bgcolor("pink")
+    text_drawer.clear()
+    text_drawer.goto(0, 200)
+    text_drawer.write(
+        message,
+        align="center",
+        font=("Arial", 24, "bold"))
+
+# Timer setup
+game_over = False
+start_time = time.time()
+timer_duration = 60  # 60 seconds
+def update_timer():
+    """Update the timer and check for timeout."""
+    global game_over
+    if game_over:
+        return
+    elapsed = time.time() - start_time
+    remaining = timer_duration - elapsed
+    if remaining <= 0:
+        display_message("Game Over")
+        game_over = True
+    else:
+        screen.title(f"Maze Game - Time Remaining: {int(remaining)} seconds")
+        # Schedule the next timer update
+        screen.ontimer(update_timer, 100)
+# Start the game
+draw_border()
+difficulty = screen.textinput("Choose Difficulty", "Enter easy or hard:").lower()
+draw_maze(difficulty if difficulty in ["easy", "hard"] else "easy")
+screen.listen()
+screen.onkey(move_up, "Up")
+screen.onkey(move_down, "Down")
+screen.onkey(move_left, "Left")
+screen.onkey(move_right, "Right")
+screen.onkey(toggle_pause, "space")  # Bind spacebar to toggle_pause
+
+move_followers()
+update_timer()
+# Main game loop
+while not game_over:
+    check_finish()
+    screen.update()
+# Keep the message displayed until the window is closed
+screen.mainloop()
